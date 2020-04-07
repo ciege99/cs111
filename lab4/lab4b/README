@@ -1,0 +1,67 @@
+NAME: Collin Prince
+ID: 505091865
+EMAIL: cprince99@g.ucla.edu
+
+Files
+-----
+
+* lab4b.c
+lab4b.c implements the program described in the spec.
+It begins the main function by parsing the options passed to the program
+using getopt_long, setting flags accordingly (and opening a logfile if
+needed). After this, the temp. sensor and button are initialized with calls
+to their respective mraa initializers. I then use mraa_gpio_dir to specify
+that input will be coming from the button, and then I use mraa_gpio_isr to
+set up an interrupt for the button so that when it is pushed, it will call
+a function that will set a flag to stop the program.
+
+I then initialize time_t structures and a tm* to read in the time for the
+reports. I then initalize a pollfd structure which has stdin as its fd.
+
+I then do an initial read of the senor and output this report before entering
+into a while loop that will continue this. To handle the reading,
+I read in the value from the sensor and then use the algorithm from the
+Grove Temperature Sensor page to compute the temperature in celsius. I
+check if the temperature should be in fahrenheit and compute it into fahrenheit
+if so, and then I call my report function which uses localtime() and asctime()
+to get the time and then format it as specified by the project page.
+
+Finally I go into a while loop that collects the time and sees if the time
+since the last read is greater than the period. If so, it repeats the process
+to print the temperature. After this, I use poll and if there is input waiting
+from stdin, this is read into a char buffer and then it is copied over to
+another buffer (in case we are reading in partial lines from last read). Once
+a newline is detected, my command_parse function is called (as well as writing
+this command to log). The command_parse function uses strcmp to compare
+the passed in command to the correct commands and sets flags as needed, or
+reports a bad command if it does not match any.
+
+Finally, once the button is pressed or OFF is typed, the program is exited
+with the exit_proc function, which closes any open file descriptors,
+closes the button and temp. sensor, and then exits with the specified exit
+value.
+###
+
+
+* test_script
+This is a file that runs some basic commands to make sure that the file
+starts and stops correctly and reports basic bad arguments.
+###
+
+* Makefile
+build (default): Makes the lab4b target
+lab4b: builds the program with appropriate flags
+check: runs the test_script
+dist: Creates the tarball w/ test_script and the other required files
+clean: deletes lab4b object and the tarball
+
+
+
+Sources
+-------
+
+https://stackoverflow.com/questions/5141960/get-the-current-time-in-c
+http://www.ukdragon.com/2010/01/remove-trailing-newline-character-from_8196.html
+http://wiki.seeedstudio.com/Grove-Temperature_Sensor_V1.2/
+https://iotdk.intel.com/docs/master/mraa/
+http://wiki.seeedstudio.com/Grove-Button/

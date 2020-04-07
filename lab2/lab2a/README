@@ -1,0 +1,143 @@
+NAME: Collin Prince
+ID: 505091865
+EMAIL: cprince99@g.ucla.edu
+
+
+
+Questions:
+
+QUESTION 2.1.1 - causing conflicts:
+Why does it take many iterations before errors are seen?
+Why does a significantly smaller number of iterations so seldom fail?
+
+Answer: It takes many iterations to fail as our programs will be running longer and accessing the same memory over and over and thus this opens
+up the chance of critical sections. This is somewhat evident in that if we access more and over a longer period of time that conflicts will become
+more common, but this could be further justified using the law of large numbers where we expect this small chance event to happen more consistently
+when we increase the number of iterations. This also only occurs when there are multiple threads. Thus when there are a smaller number of iterations
+and few threads, the chance of conflict is very low and in a very short lived program we would not see this sort of condition often. 
+
+QUESTION 2.1.2 - Cost of yielding
+Why are the --yield runs so much slower?
+Where is the additional time going?
+Is it possible to get valid per-operation timings if we are using the --yield option?
+If so, explain how. If not, explain why not.
+
+Answer: The yield runs are much slower as they involve extra context switches everytime we are about to enter a critical section.
+This entails storing registers, storing the state of the thread, etc. and then loading all of these for another thread, which
+adds a considerable amount of time. It is not possible to get valid per operation timings unless we know on average how long a context switch
+takes on our system, as we would have to factor out this time for each yield.
+
+
+QUESTION 2.1.3 - measurement errors:
+Why does the average cost per operation drop with increasing iterations?
+If the cost per iteration is a function of the number of iterations, how do we know how many iterations to run (or what the "correct" cost is)?
+
+Answer: The average cost per operation drops with increasing iterations as at first the run time is dominated by the runtime of the program, such as the time
+involved with creating threads. As we increase iterations, each thread can (hopefully) operate on more iterations before it is forced to switch contexts and
+less of the overall time of our program is spent on creating threads. To know how many iterations to run, we would have to analyze where the minimum
+cost per iteration occurs (i.e. the minimum point on a graph of iterations vs time per operation). If there is a point where decreasing and increasing iterations
+both worsen performance, than this is our correct point. If instead we find that the line flattens out at a minimum, then it would appear that there is only a
+threshold on how much we can improve performance and any iteration value at or above this threshold will work. This is the case with our graphs, so
+we should run as many iterations as when we reach the flattening out of our line which seems to be decaying exponentially in lab2_add-2.png.
+
+
+QUESTION 2.1.4 - costs of serialization:
+Why do all of the options perform similarly for low numbers of threads?
+Why do the three protected operations slow down as the number of threads rises?
+
+Answer: All of the options perform similarly for low numbers of threads because in these scenarios there will be either no waiting for locks (if we have thread == 1) or very little
+when we have a few threads. In these cases, we would expect conflicts between threads to be rare versus when we have many threads running parallel.
+All three options slow down as the number of threads rises as the likelihood that two threads will try to enter a critical section at the same time increases,
+leading to more wait time for the lock to be released for each thread and added overhead for each thread that is waiting and then having to execute a context switch
+if the wait takes up its allotted time cycles (or switching when it can't get the lock when using a mutex lock). 
+
+
+
+QUESTION 2.2.1 - scalability of Mutex
+Compare the variation in time per mutex-protected operation vs the number of threads in Part-1 (adds) and Part-2 (sorted lists).
+Comment on the general shapes of the curves, and explain why they have this shape.
+Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.
+
+Answer: Based on the graphs, the mutex operations in Part-1 and Part-2 seem to have a similar shape, as they both have a positive linear shape on the logarithmic scale
+(which would equate to an exponential positive shape on a standard y scale). This is due to the face that adding threads would exponentially add to the time spent waiting
+for both programs as the problem of locking and waiting would only increase as more threads compete for resources and critical sections. Since the graph for Part-1
+extends out to show a greater number of threads, we can see that it eventually begins to flatten out, but since we can only compare up to 4 threads for Part-2, they both
+seem to have a similar shape for a small number of threads.
+
+
+QUESTION 2.2.2 - scalability of spin locks
+Compare the variation in time per protected operation vs the number of threads for list operations protected by Mutex vs Spin locks. Comment on the general
+shapes of the curves, and explain why they have this shape. Comment on the relative rates of increase and differences in the shapes of the curves, and
+offer an explanation for these differences.
+
+Answer: Both graphs show that an increase in threads worsens the performance of spin locks, but the worsening is shown to be more dramatic for the add operations.
+The mutex and spin locks both appear to have a linear shape on the logarithmic scale that we are graphing them on. The reason why we would expect spin locks
+to scale worse than a mutex is that mutexes will simply check if the lock is taken and simply context switch to another thread if the lock is not available.
+With a spinlock, however, it will use the entire CPU time that is allotted to thread until it can acquire a lock or be switched by an interrupt. Thus, this behavior
+will have similarly bad performance to mutex on a small number of threads (most likely due to the greater overhead of a mutex dominating time when there are few
+lock conflicts). However, spinlocks will get much worse as we scale.
+
+########
+
+
+Implementation Notes
+
+
+* lab2_add.c
+This function begins by parsing the command line options with getopt_long and marking flags for when different options are called.
+Next, the counter is initialized. Immediately after that, the start time is recorded. Next, I create a struct Add_args (a self-made
+struct that contains a pointer to the counter and the number of iterations) that will be used to pass as an arg to the thread function
+that will be used in pthread_create. After that, I declare an array of threads of a size defined by the --threads option. Next, I create
+each thread using the pthread_create and call the thread's add_wrapper function. In this function, depending on which flag is set for each
+option (i.e. whether a sync flag has been chosen), a different function will be called within the add_wrapper function to handle the adding
+to the counter. There is a function protected by a mutex lock, a spin lock, and the GCC built-ins respectively. Finally, back in the main func,
+the main function will wait for each thread to rejoin and then will print out the program info in the form specified by spec (and destroy the mutex
+lock if --sync=m was used).
+
+
+*lab2_list.c
+This function begins by parsing the command line options with getopt_long and marking flags for when different options are called.
+Next the start time is collected. Then, an array of SortedListElement_t of size (threads*iterations) is created, as well as a
+SortedList_t object that will be used as the dummy node for the list. The array is then passed to a function that will initialize each
+element in the array to have a random key value. There is also an array of struct List_args that is created
+to contain the necessary arguments that will need to be passed to the function for each thread. These arguments include number of iterations,
+the address of the dummy node, and a pointer to the start of the chunk of memory that the thread will operate on. Next, the program
+creates each thread. Again, the function used to start the threads is simply a wrapper that redirects them to a thread to handle operations depending
+on which flags have been set (i.e. separate functions for the list operations that is unprotected, one that is protected by a mutex lock, and one that
+is protected by a spinlock). The main section then waits on each thread and when all threads have completed, it prints the relevant info and destroys the mutex
+if --sync=m option was used.
+
+* SortedList.c
+Implementation of SortedList.h
+There is a function (insert_between_nodes) that generalizes the process to connect a new node between two nodes that were connected before that I use in the insert function.
+I also created a deletion function that generalizes the process of disconnecting a deleted node. Lookup simply searches through the list until we reach the head dummy node again.
+Length simply iterates through list and counts the number of nodes.
+
+*test_script
+This implements all of the tests needed to generate the data for the graphs using shell script.
+
+*Makefile
+build: builds lab2_add and lab2_list
+tests: runs the tests to generate data for graphs
+graphs: run lab2_add.gp and lab2_list.gp to make graphs
+dist: generates tarball
+clean: removes tarball and lab2_add and lab2_list if present
+
+
+
+
+
+
+
+
+
+Sources:
+http://pages.cs.wisc.edu/~remzi/OSTEP/threads-intro.pdf
+http://pages.cs.wisc.edu/~remzi/OSTEP/threads-locks.pdf
+http://pages.cs.wisc.edu/~remzi/OSTEP/threads-locks-usage.pdf
+https://www.beck-ipc.com/api_files/sc145/libc/Elapsed-Time.html
+https://www.geeksforgeeks.org/function-pointer-in-c/
+https://www.gnu.org/software/make/manual/html_node/Complex-Makefile.html
+https://computing.llnl.gov/tutorials/pthreads/
+https://gcc.gnu.org/onlinedocs/gcc-4.4.3/gcc/Atomic-Builtins.html
+https://stackoverflow.com/questions/12727881/c-what-is-the-use-of-extern-in-header-files

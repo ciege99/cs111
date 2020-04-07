@@ -1,0 +1,149 @@
+NAME: Collin Prince
+UID: 505091865
+EMAIL: cprince99@g.ucla.edu
+
+
+Questions:
+
+QUESTION 2.3.1 - Cycles in the basic list implementation:
+Where do you believe most of the cycles are spent in the 1 and 2-thread list tests ?
+Why do you believe these to be the most expensive parts of the code?
+Where do you believe most of the time/cycles are being spent in the high-thread spin-lock tests?
+Where do you believe most of the time/cycles are being spent in the high-thread mutex tests?
+
+Most of the time in 1 and 2-thread list tests are spent on initializing data structures such
+as arrays, timespecs, and locks. These are the most the expensive parts of the code as they involve
+calls to libraries and initializing blocks of memory that are not used for a long duration of time.
+In high-thread spin-lock tests, most of the memory ends up being spent waiting for the lock,
+as all of the threads waiting on a lock will spend their cycles waiting for the lock to be released
+until it has been finished with by another thread. In a high-thread mutex test, most of the time is
+spent on the mutex operations as they involved checking the state of external mutex objects and
+calling functions on these mutex objects.
+
+
+QUESTION 2.3.2 - Execution Profiling:
+Where (what lines of code) are consuming most of the cycles when the spin-lock version of the list exerciser is run with a large number of threads?
+Why does this operation become so expensive with large numbers of threads?
+
+Answer:
+The code that is taking up most of the cycles when the spin-lock version of the list exerciser is run
+with a large number of threads are the lines that implement the spin wait for the lock to be released.
+This operation becomes so expensive with large numbers of threads because if a thread is interrupted
+while it has hold of the lock, then all of the other threads scheduled after that which need the lock
+will wait and spin until the thread holding the lock is scheduled again and can release the lock.
+
+
+
+QUESTION 2.3.3 - Mutex Wait Time:
+Look at the average time per operation (vs. # threads) and the average wait-for-mutex time (vs. #threads).
+Why does the average lock-wait time rise so dramatically with the number of contending threads?
+Why does the completion time per operation rise (less dramatically) with the number of contending threads?
+How is it possible for the wait time per operation to go up faster (or higher) than the completion time per operation?
+
+Answer: 
+The average lock wait time rises so dramatically with the number of contending threads because
+more threads means that there will be more opportunities for race conditions between threads and a
+longer wait time when threads need the lock of a thread that has been interrupted, as this means
+that every waiting thread must yield (for mutex) or spin (for spin lock) and then context switch
+if it cannot get the lock. So as we increase the number of threads, we increase the probability
+of race conditions and lock contention.
+
+Average completion time per operation rises with the numbers of contending threads due to the added
+time overhead of threads competing for locks bogging down the rest of the program. A thread
+will always be running (besides during context switches) though, so we expect that some
+thread is making progress (whichever has the lock), so this could be why this average completion
+time operation does not rise as dramatically as the average lock time. In order for our
+critical operations to be carried out atomically, we must take on this overhead.
+
+The average wait time per operation goes up faster than the average completion time for operation
+as the average wait time per operation is not disjoint for each thread i.e. threads can each be
+waiting for a lock at the same time, but each thread keeps track of their own wait time when waiting
+for a lock, so the wait time of each thread could account for the same segment of run time of the
+program, but it is added the to the total wait time for locks all the same. The average completion
+time, however, is maintained for the entire program and only takes into account the beginning of
+the parent thread and after all of the children threads after exited, so there is no double (or triple,
+quadruple, etc.) counting the same wait time as we might see for the average wait time per operation.
+
+
+
+QUESTION 2.3.4 - Performance of Partitioned Lists
+Explain the change in performance of the synchronized methods as a function of the number of lists.
+Should the throughput continue increasing as the number of lists is further increased? If not, explain why not.
+It seems reasonable to suggest the throughput of an N-way partitioned list should be equivalent to the throughput of a single list with fewer (1/N) threads. Does this appear to be true in the above curves? If not, explain why not.
+
+Answer:
+As is plain to see in the 4th and 5th graph, the increase in the number of lists dramatically
+increases the throughput of each thread. While at first the throughput takes a dip as we go from
+one thread to multiple threads (due to the inherent added overhead of competing threads), we see
+that this drop eventually flattens out for multiple lists.
+
+We would most likely expect there to be a threshold for how many lists is beneficial in increasing
+throughput. While at first it is obvious that increasing lists improves throughput, we might find
+that later that the overhead of multiple lists would worsen the throughput, especially if our number
+of elements we are sorting into lists remains the same. We would approach one list per element if we
+continued to increase lists without increasing elements, leading to a lot of overhead for each
+element. Once we go past this limit of one list per element, then we would we have more lists
+than we do elements, which would be added overhead with no benefit.
+
+The hypothesis that the throughput of an N-way partitioned list should be equivalent to the
+throughput of a single list with fewer (1/N) threads appears to be true when we look at graphs
+4 and 5. Though the throughput is not exactly the same for some pairs, they are close enough
+that this is a reasonable approximation to make.
+
+
+
+--------
+Files
+-------
+
+*lab2_list.c
+This function begins by parsing the command line options with getopt_long and marking flags for when different options are called.
+Next the start time is collected. Then, an array of SortedListElement_t of size (threads*iterations) is created, as well as a
+SortedList_t object that will be used as the dummy node for the list. The array is then passed to a function that will initialize each
+element in the array to have a random key value. There is also an array of struct List_args that is created
+to contain the necessary arguments that will need to be passed to the function for each thread. These arguments include number of iterations,
+the address of the dummy node, and a pointer to the start of the chunk of memory that the thread will operate on. Next, the program
+creates each thread. Again, the function used to start the threads is simply a wrapper that redirects them to a thread to handle operations depending
+on which flags have been set (i.e. separate functions for the list operations that is unprotected, one that is protected by a mutex lock, and one that
+is protected by a spinlock). The main section then waits on each thread and when all threads have completed, it prints the relevant info and destroys the mutex
+if --sync=m option was used.
+
+* SortedList.c
+Implementation of SortedList.h
+There is a function (insert_between_nodes) that generalizes the process to connect a new node between two nodes that were connected before that I use in the insert function.
+I also created a deletion function that generalizes the process of disconnecting a deleted node. Lookup simply searches through the list until we reach the head dummy node again.
+Length simply iterates through list and counts the number of nodes.
+
+*test_script
+This implements all of the tests needed to generate the data for the graphs using shell script.
+
+*graph.gp
+Implements this gnuplot scripts needed to generate the graphs from the csv data
+
+*profile.out
+Contains profiling information from pprof
+
+*Makefile
+build: lab2_list
+lab2_list: builds binary exec for lab2_list.c with correct flags
+tests: runs the tests to generate data for graphs
+graphs: run graph.gp to make graphs
+profile: run pprof to generate profile.out
+dist: generates tarball
+clean: removes tarball and lab2_add and lab2_list if present
+
+
+
+
+Sources
+-------
+http://www.cse.yorku.ca/~oz/hash.html
+http://pages.cs.wisc.edu/~remzi/OSTEP/threads-intro.pdf
+http://pages.cs.wisc.edu/~remzi/OSTEP/threads-locks.pdf
+http://pages.cs.wisc.edu/~remzi/OSTEP/threads-locks-usage.pdf
+https://www.beck-ipc.com/api_files/sc145/libc/Elapsed-Time.html
+https://www.geeksforgeeks.org/function-pointer-in-c/
+https://www.gnu.org/software/make/manual/html_node/Complex-Makefile.html
+https://computing.llnl.gov/tutorials/pthreads/
+https://gcc.gnu.org/onlinedocs/gcc-4.4.3/gcc/Atomic-Builtins.html
+https://stackoverflow.com/questions/12727881/c-what-is-the-use-of-extern-in-header-files

@@ -1,0 +1,61 @@
+NAME: Collin Prince
+EMAIL: cprince99@g.ucla.edu
+ID: 505091865
+
+Files:
+
+* lab0.c
+lab0.c contains my implementation of the program. 
+I first begin by parsing through the options using getopt then for each option
+that is parsed, a switch statement is used to either implement file redirection
+(in the case of --input and --output) or set a flag for a segfault or catch later
+(since the segfault should not happen until after file redirection has taken place).
+The input and output switch cases also check for errors in opening files, and 
+call to functions to print an error message and exit if there is an error.
+
+After all options are parsed, if the flags for --segfault or --catch have been
+raised, these are set off, with --segfault setting a null pointer to have 
+the value '0' and --catch signalling to another function to print
+an error message and exit with code 3.
+
+Finally, there is a while loop that repeatedly reads in a byte from
+the input file descriptor and then writes it to the output file descriptor
+until the EOF has been reached. After this section, the program then exits with
+code 0. 
+
+
+* Makefile
+Makefile contains my implementation of all of the different args that can be 
+used with Automake.
+
+
+* backtrace.png and breakpoint.png
+These images show my use of GDB as described in the spec. 
+
+
+* check_tests (Smoke tests)
+check_tests contains my smoke tests. This is a shell script that runs my 
+executable with varying options and input and checks that it exits with the
+correct code each time. 
+Include tests are:
+    Run with no options, return 0
+    Run with --input, return 0
+    Run with --output, return 0
+    Run with --input and --output, return 0
+    Run with --fake, return 1
+    Run with incorrect usage of option, return 1
+    Run with --input without permissions for input file, return 2
+    Run with --input with non-existent file, return 2
+    Run with --output without permissions for output file, return 3
+    Run with --segfault and --catch, return 4
+    Run with all options, return 4
+
+
+Sources for tutorials/instruction:
+gdb - https://condor.depaul.edu/glancast/373class/docs/gdb.html
+testing exit codes - https://bencane.com/2014/09/02/understanding-exit-codes-and-how-to-use-them-in-bash-scripts/
+getopt - https://www.gnu.org/software/libc/manual/html_node/Getopt-Long-Option-Example.html
+    https://www.geeksforgeeks.org/getopt-function-in-c-to-parse-command-line-arguments/
+    https://linuxprograms.wordpress.com/2012/06/22/c-getopt_long-example-accessing-command-line-arguments/
+signals - https://www.gnu.org/software/libc/manual/html_node/Signal-Handling.html
+strerror - https://www.tutorialspoint.com/c_standard_library/c_function_strerror.htm

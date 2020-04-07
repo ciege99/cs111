@@ -1,0 +1,48 @@
+NAME: Thilan Tran, Collin Prince
+EMAIL: thilanoftran@gmail.com, cprince99@g.ucla.edu
+ID: 605140530, 505091865
+
+
+FILES
+------
+
+* lab3a.c
+This file implements the program described by the spec. We begin by checking the input passed
+in on the commandline, making sure that the right number of arguments are given and that we
+can open the file system image. We next get the superblock info, reading the superblock
+from an offset of 1024 bytes, and then use the superblock to get all of the necessary info
+and print this. Next, we iterate through each group descriptor in the groups function.
+We get the number of blocks from each descriptor (either the standard number of blocks or
+the overflow amount for the last block). For each group descriptor, we print the specified
+information from the spec, and we then read the respective bitmaps for each group descriptor.
+We use one function for bitmaps, which reads in the block that contains the bitmap, and for
+each bit if the bit is non-zero, we print out the information for the respective bit
+(whether it is inode or block). After reading the imaps, we then iterate through each
+inode in each group in the inodes_in_group function. For each inode we check to make sure
+that the inode is not empty and then we collect all of the statistics we need from the
+inode properties.
+
+We then call the function inode_datablocks on each inode. If the inode is a directory,
+file, or a symlink with a long enough name, we printout the name for each. We then print out
+directory entries for each standard data block (using dir_entries function)
+and we call the recursive function indrect_blocks on each indirect/doubly/triply block.
+In the indirect_blocks function, we check each inode number in the indirect block. If that
+inode belongs to a directory and it's parent is a singly direct pointer,
+we print this out as a dirent. If not we increment our offset (depending on the level of the
+indirect block we are traversering) and then check the next inode. Our base case is if our
+level is 0 (not an indirect block) or our indirect block's number is 0 (invalid).
+
+
+* Makefile
+.PHONY: runs the dist and clean targets
+lab3a aka $(TARGET): make the lab3a program
+dist: make the tarball
+clean: remove lab3a binary and tarball
+
+
+Sources
+--------
+http://man7.org/linux/man-pages/man8/debugfs.8.html
+http://man7.org/linux/man-pages/man2/pread.2.html
+https://www.nongnu.org/ext2-doc/ext2.html
+https://linux.die.net/man/3/gmtime

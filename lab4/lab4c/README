@@ -1,0 +1,54 @@
+NAME: Collin Prince
+EMAIL: cprince99@g.ucla.edu
+ID: 505091865
+
+Files
+_____
+* lab4c_tcp.c
+This programs take all of the functionality of lab4b, but takes out the button
+shutdown option and adds in the required parameters described by the spec
+and reads in/prints out to the tcp server. 
+
+It begins by parsing the options and non-switch options and storing them in
+their respective variables. Then it initializes the temp sensor. Next, it calls
+the setup_tcp function, which handles the tcp protocol. This function calls
+the socket system call on our socket file descriptor. It then gets the host
+by using the host name and the gethostbyname system call and converts it
+to an ipv4 address. This then is added to a sockaddr_in struct which is used
+with the connect system call to connect to the server. The function then
+closes stdin and stdout and dups the socket file descriptor to override 
+the input/output of the program. Finally, the function sends the ID of the 
+program to the server. 
+
+After this the main function begins the reporting of the temperature and
+command parsing, polling the socket and writing to the logfile and handling
+commands as new input is detected. It then exits successfully when OFF is 
+called.
+
+* lab4c_tls.c
+This program has the same structure as the tcp version besides the tls 
+functionality. This is handled with the setup_tls() function, which
+begins by initializing SSL with the SSL_library_init() function and
+OpenSSL_add_all_algorithms(). We then call TLSv1_client_method() to create 
+a method and then we create a context with SSL_CTX_new(method) function. We
+then call setup_tcp to set up the tcp socket (same functionality as
+lab4c_tcp.c). SSL_set_fd is then called to link the socket and ssl, and then
+we connect with SSL_connect(ssl). Finally we send the ID with SSL_write
+and replace other uses of writes to stdout with SSL_write's to ssl and 
+replace reading from stdin with reads from SSL_read instead. 
+
+* Makefile
+build: makes lab4c_tcp and lab4c_tls programs
+lab4c_tcp: target for lab4c_tcp.c
+lab4c_tls: target for lab4c_tls.c
+dist: makes tarball
+clean: removes tarball and lab4c_tcp/tls executables
+
+
+Sources
+-------
+http://man7.org/linux/man-pages/man3/gethostbyname.3.html
+https://aticleworld.com/socket-programming-in-c-using-tcpip/
+https://aticleworld.com/ssl-server-client-using-openssl-in-c/
+https://www.geeksforgeeks.org/c-program-display-hostname-ip-address/
+http://fm4dd.com/openssl/sslconnect.shtm

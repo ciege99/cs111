@@ -1,0 +1,144 @@
+Total: 633 samples
+     499  78.8%  78.8%      633 100.0% spin_thread
+      73  11.5%  90.4%       73  11.5% SortedList_lookup
+      60   9.5%  99.8%       60   9.5% SortedList_insert
+       1   0.2% 100.0%        1   0.2% time_diff
+       0   0.0% 100.0%      633 100.0% ?? /usr/src/debug////////glibc-2.17-c758a686/misc/../sysdeps/unix/sysv/linux/x86_64/clone.S:111
+       0   0.0% 100.0%      633 100.0% start_thread
+       0   0.0% 100.0%      633 100.0% thread_func
+ROUTINE ====================== spin_thread in /u/cs/ugrad/prince/cs111/lab2/lab2b/lab2_list.c
+   499    633 Total samples (flat / cumulative)
+     .      .  431:     }
+     .      .  432:     pthread_mutex_unlock(mutex+hash); //unlock list's lock
+     .      .  433:   }
+     .      .  434: }
+     .      .  435: 
+---
+     .      .  436: void spin_thread(void * args) {
+     .      .  437:   struct List_args* arg = (struct List_args*) args; //convert args to List_args ptr
+     .      .  438:   struct timespec before, after; //use these timespecs to calculate elapsed time
+     .      .  439:   int i;
+     .      .  440:   for (i = 0; i < iter_op; i++) {
+     .      .  441:     int hash = hash_func(arg->ptr[i].key); //get hash for elem
+     .      .  442:     safe_gettime(&before); //lock and measure time
+   295    295  443:     while (__sync_lock_test_and_set(spin_arr + hash, 1) == 1) //spinlock
+     .      .  444: 	;
+     .      .  445:     safe_gettime(&after);
+     .      1  446:     arg->lock_time += time_diff(&before, &after); //calculate time after
+     .     60  447:     SortedList_insert(list_arr + hash, &arg->ptr[i]); //insert and unlock
+     .      .  448:     __sync_lock_release(spin_arr+hash); 
+     .      .  449:   }
+     .      .  450: 
+     .      .  451:   int length = 0;
+     .      .  452:   for (i = 0; i < list_op; i++) {
+     .      .  453:     safe_gettime(&before); //lock each list
+     .      .  454:     while (__sync_lock_test_and_set(spin_arr + i, 1) == 1)
+     .      .  455:       ;
+     .      .  456:     safe_gettime(&after);
+     .      .  457:     arg->lock_time += time_diff(&before, &after);
+     .      .  458:   }
+     .      .  459:   for (i = 0; i < list_op; i++) //add up length of each list
+     .      .  460:         length += SortedList_length(list_arr+i);
+     .      .  461:   for (i = 0; i < list_op; i++) //unlock each list
+     .      .  462:     __sync_lock_release(spin_arr + i);
+     .      .  463: 
+     .      .  464:   if (length == -1) {
+     .      .  465:     fprintf(stderr, "Error: Mismatched pointers in length\n");
+     .      .  466:     exit_and_free(2);
+     .      .  467:   }
+     .      .  468:   int hash;
+     .      .  469:   for (i = 0; i < iter_op; i++) {
+     .      .  470:     SortedListElement_t* cur;
+     .      .  471:     hash = hash_func(arg->ptr[i].key); //get hash for each elem
+     .      .  472:     safe_gettime(&before);
+   203    203  473:     while (__sync_lock_test_and_set(spin_arr+hash, 1) == 1) //lock respective list
+     .      .  474:       ;
+     1      1  475:     safe_gettime(&after);
+     .      .  476:     arg->lock_time += time_diff(&before, &after);
+     .     73  477:     cur = SortedList_lookup(list_arr+hash, arg->ptr[i].key); //look up value
+     .      .  478:     if (cur == NULL) {
+     .      .  479:       fprintf(stderr, "Error: Key not found when it should be in list\n");
+     .      .  480:       exit_and_free(2);
+     .      .  481:     }
+     .      .  482:     int ret = SortedList_delete(cur); //delete found value
+     .      .  483:     if (ret == 1) {
+     .      .  484:       fprintf(stderr, "Error: Mismatched pointers in delete\n");
+     .      .  485:       exit_and_free(2);
+     .      .  486:     }
+     .      .  487:     __sync_lock_release(spin_arr + hash); //release lists lock
+     .      .  488:   }  
+     .      .  489: }
+---
+     .      .  490: 
+     .      .  491: 
+     .      .  492: void msg_set(char *arg) { //parser to set exit message
+     .      .  493:   char yield[5]; //holds the yield option part of message
+     .      .  494:   char sync[5]; //holds the sync option part of message
+ROUTINE ====================== spin_thread in /u/cs/ugrad/prince/cs111/lab2/lab2b/lab2_list.c
+   499    633 Total samples (flat / cumulative)
+     .      .  431:     }
+     .      .  432:     pthread_mutex_unlock(mutex+hash); //unlock list's lock
+     .      .  433:   }
+     .      .  434: }
+     .      .  435: 
+---
+     .      .  436: void spin_thread(void * args) {
+     .      .  437:   struct List_args* arg = (struct List_args*) args; //convert args to List_args ptr
+     .      .  438:   struct timespec before, after; //use these timespecs to calculate elapsed time
+     .      .  439:   int i;
+     .      .  440:   for (i = 0; i < iter_op; i++) {
+     .      .  441:     int hash = hash_func(arg->ptr[i].key); //get hash for elem
+     .      .  442:     safe_gettime(&before); //lock and measure time
+   295    295  443:     while (__sync_lock_test_and_set(spin_arr + hash, 1) == 1) //spinlock
+     .      .  444: 	;
+     .      .  445:     safe_gettime(&after);
+     .      1  446:     arg->lock_time += time_diff(&before, &after); //calculate time after
+     .     60  447:     SortedList_insert(list_arr + hash, &arg->ptr[i]); //insert and unlock
+     .      .  448:     __sync_lock_release(spin_arr+hash); 
+     .      .  449:   }
+     .      .  450: 
+     .      .  451:   int length = 0;
+     .      .  452:   for (i = 0; i < list_op; i++) {
+     .      .  453:     safe_gettime(&before); //lock each list
+     .      .  454:     while (__sync_lock_test_and_set(spin_arr + i, 1) == 1)
+     .      .  455:       ;
+     .      .  456:     safe_gettime(&after);
+     .      .  457:     arg->lock_time += time_diff(&before, &after);
+     .      .  458:   }
+     .      .  459:   for (i = 0; i < list_op; i++) //add up length of each list
+     .      .  460:         length += SortedList_length(list_arr+i);
+     .      .  461:   for (i = 0; i < list_op; i++) //unlock each list
+     .      .  462:     __sync_lock_release(spin_arr + i);
+     .      .  463: 
+     .      .  464:   if (length == -1) {
+     .      .  465:     fprintf(stderr, "Error: Mismatched pointers in length\n");
+     .      .  466:     exit_and_free(2);
+     .      .  467:   }
+     .      .  468:   int hash;
+     .      .  469:   for (i = 0; i < iter_op; i++) {
+     .      .  470:     SortedListElement_t* cur;
+     .      .  471:     hash = hash_func(arg->ptr[i].key); //get hash for each elem
+     .      .  472:     safe_gettime(&before);
+   203    203  473:     while (__sync_lock_test_and_set(spin_arr+hash, 1) == 1) //lock respective list
+     .      .  474:       ;
+     1      1  475:     safe_gettime(&after);
+     .      .  476:     arg->lock_time += time_diff(&before, &after);
+     .     73  477:     cur = SortedList_lookup(list_arr+hash, arg->ptr[i].key); //look up value
+     .      .  478:     if (cur == NULL) {
+     .      .  479:       fprintf(stderr, "Error: Key not found when it should be in list\n");
+     .      .  480:       exit_and_free(2);
+     .      .  481:     }
+     .      .  482:     int ret = SortedList_delete(cur); //delete found value
+     .      .  483:     if (ret == 1) {
+     .      .  484:       fprintf(stderr, "Error: Mismatched pointers in delete\n");
+     .      .  485:       exit_and_free(2);
+     .      .  486:     }
+     .      .  487:     __sync_lock_release(spin_arr + hash); //release lists lock
+     .      .  488:   }  
+     .      .  489: }
+---
+     .      .  490: 
+     .      .  491: 
+     .      .  492: void msg_set(char *arg) { //parser to set exit message
+     .      .  493:   char yield[5]; //holds the yield option part of message
+     .      .  494:   char sync[5]; //holds the sync option part of message

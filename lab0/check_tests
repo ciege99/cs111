@@ -1,0 +1,131 @@
+#! /bin/sh
+# Name: Collin Prince
+# Email: cprince99@g.ucla.edu
+# ID: 505091865
+
+FAIL=0
+
+echo "abc" > test_input.txt
+
+./lab0 < test_input.txt
+
+if [ $? -eq 0 ]
+then
+    printf "\nSuccessfully copied from stdin\n"
+else
+    printf "\nFailed to copy from stdin to stdout\n"
+    FAIL=1
+fi
+
+./lab0 --input=test_input.txt
+if [ $? -eq 0 ]
+then
+    printf "\nSuccessfully used --input for file redirection\n"
+else
+    printf "\nFailed to use --input for file redirection\n"
+    FAIL=1
+fi
+
+./lab0 < test_input.txt --output=new_file.txt
+if [ $? -eq 0 ]
+then   
+    printf "\nSuccessfully used --output to create output file\n"
+    rm -f new_file.txt
+else   
+    printf "\nFailed to use --output to create output file\n"
+    rm -f new_file.txt
+    FAIL=1
+fi
+
+./lab0 --input=test_input.txt --output=new_file.txt
+if [ $? -eq 0 ]
+then   
+    printf "\nSuccessfully used --output and --input together\n"
+    rm -f new_file.txt
+else   
+    printf "\nFailed to use --output and --input together\n"
+    rm -f new_file.txt
+    FAIL=1
+fi
+
+./lab0 --fake 
+if [ $? -eq 1 ]
+then
+    printf "\nSuccessfully identifies invalid argument\n"
+else
+    printf "\nFails to identify invalid argument\n"
+    FAIL=1
+fi
+
+./lab0 --input
+if [ $? -eq 1 ]
+then
+    printf "\nSuccessfully identifies missing argument for --input\n"
+else
+    printf "\nFails to identify missing argument for --input\n"
+    FAIL=1
+fi
+
+touch restricted
+chmod u-r restricted
+./lab0 --input=restricted
+if [ $? -eq 2 ]
+then
+    printf "\nSuccessfully exits due to lack of permission for --input file\n"
+    rm -f restricted
+else
+    printf "\nFails to exit due to lack of permission for --input file\n"
+    rm -f restricted
+    FAIL=1
+fi
+
+./lab0 --input=non_existent
+if [ $? -eq 2 ]
+then
+    printf "\nSuccessfuly exits as --input file does not exist\n"
+else
+    printf "\nFails to exit when --input file does not exist\n"
+    FAIL=1
+fi
+
+touch restricted
+chmod u-w restricted
+./lab0 --output=restricted
+if [ $? -eq 3 ]
+then
+    printf "\nSuccessfully exits due to lack of permission for --output file\n"
+    rm -f restricted
+else
+    printf "\nFails to exit due to lack of permission for --output file\n"
+    rm -f restricted
+    FAIL=1
+fi
+
+./lab0 --segfault --catch
+if [ $? -eq 4 ]
+then 
+    printf "\nSuccessfuly caught segfault with --segfault and --catch\n"
+else
+    printf "\nFailed to catch segfault with --segfault and --catch\n"
+    FAIL=1
+fi
+
+./lab0 --segfault --catch --input=test_input.txt --output=delete
+if [ $? -eq 4 ]
+then
+    printf "\nSuccessfully exits due to caught segfault when all options are used\n"
+    rm -f delete
+else
+    printf "\n Fails to exit due to caught segfault when all options are used\n"
+    rm -f delete
+    FAIL=1
+fi
+
+rm -f test_input.txt
+
+if [ $FAIL -eq 0 ]
+then
+    printf "\nAll tests passed!\n"
+else
+    printf "\nProgram did not pass all tests\n"
+fi

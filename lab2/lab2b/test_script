@@ -1,0 +1,65 @@
+#! /bin/bash
+
+# lab2b_1.png
+for x in 1 2 4 8 12 16 24
+do
+    for y in "m" "s"
+    do
+	./lab2_list --iterations=1000 --threads=$x --sync=$y
+    done
+done
+
+
+
+# lab2b_2.png
+for x in 1 2 4 8 12 16 24
+do
+    ./lab2_list --iterations=1000 --sync=m --threads=$x
+done
+
+
+# lab2b_3.png
+# no lock
+for x in 1 4 8 12 16
+do
+    for y in 1 2 4 8 16
+    do
+	./lab2_list --yield=id --lists=4 --threads=$x --iterations=$y 
+    done
+done
+# mutex
+for x in 1 4 8 12 16
+do
+    for y in 10 20 40 80
+    do
+	./lab2_list --yield=id --lists=4 --threads=$x --iterations=$y --sync=m
+    done
+done
+# spin
+for x in 1 4 8 12 16
+do
+    for y in 10 20 40 80
+    do
+	./lab2_list --yield=id --lists=4 --threads=$x --iterations=$y --sync=s
+    done
+done
+
+
+#lab2b_4.png -- mutex lock performance
+for x in 1 2 4 8 12
+do
+    for y in 1 4 8 16
+    do
+	./lab2_list --iterations=1000 --threads=$x --lists=$y --sync=m
+    done
+done
+
+
+#lab2b_5.png -- spin lock performance
+for x in 1 2 4 8 12
+do
+    for y in 1 4 8 16
+    do
+	./lab2_list --iterations=1000 --threads=$x --lists=$y --sync=s
+    done
+done

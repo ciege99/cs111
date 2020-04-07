@@ -1,0 +1,54 @@
+NAME: Collin Prince
+EMAIL: cprince99@g.ucla.edu
+ID: 505091865
+
+*******
+lab1a.c
+*******
+lab1a.c contains the source code for lab1a.
+
+The main function of the program creates a termios struct to save the original terminal
+I/O settings. I then uses the set_term function to change the settings of the terminal
+to those specified by the spec. It then calls the opt_handler to handle options passed
+to the program and set fork_flag, which is used as a flag for whether we are doing
+standard I/O or creating a shell. The respective functions for normal (io_func) or shell
+(shell_func) are called respectively, and then exit_proto resets the terminal settings
+to the original and exits.
+
+For the standard I/O handling specified in part 2 of the spec, the io_func simply creates
+a char buffer, and then reads in data and prints it out as specified in the spec until an EOF
+is reached. It then stops I/O, resets the terminal settings, and exits.
+
+For the terminal/shell I/O, shell_func first singals that in case of a SIGPIPE, it should
+call the sigpipe_handler function. It then creates two pipes, one form term-to-shell and one
+from shell-to-term. Next the function forks into two processes, with the parent process
+handling the terminal I/O and the child process exec'ing into a shell. For each process,
+they begin by closing the read/write end of the pipes they are not using, and the child process
+closes stdin/stdout/stderr and dups them to the correct pipes as specified in the spec. The
+child process finally exec's into a shell after this. The parent process behaves differently,
+as after closing it's not used pipe ends, it creates two poll structures, one for polling
+stdin and one for polling the output of the shell. The terminal then runs a while loop that
+continuosly polls and checks for input from I/O and the shell respectively, and exits when input
+ends or when POLLHUP or POLLERR is detected. The terminal process then closes any remaining pipes
+and then prints out the shell exit message with the correct singal and status. Input handling
+for the terminal is handled by the handle_stdin function which reads in bytes and handles
+them according to the spec, and the shell output is handled by handle_shell in the same manner.
+
+
+********
+Makefile
+********
+The Makefile builds the different targets as described in the spec, with 'all' being the
+default target which builds the lab1a executable. The lab1a object is built with the -Wall,
+-Wextra, and -g options using lab1a.c as its source code. The clean target removes the lab1a
+object and the tarball from the current directory. The 'make dist' option builds a tarball
+with lab1a.c, Makefile, and README. 
+
+
+Sources:
+
+https://www.geeksforgeeks.org/fork-system-call/
+https://www.geeksforgeeks.org/pipe-system-call/
+https://blog.nelhage.com/2009/12/a-brief-introduction-to-termios-termios3-and-stty/
+https://www.linuxtoday.com/blog/multiplexed-i0-with-poll.html
+https://linux.die.net/man/2/waitpid

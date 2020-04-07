@@ -1,0 +1,92 @@
+#! /bin/bash
+
+# NAME: Collin Prince
+# UID: 505091865
+# EMAIL: cprince99@g.ucla.edu
+
+
+echo "OFF" | ./lab4b
+if [ $? -eq 0 ]
+then
+    echo "Passes basic test with STOP command"
+else
+    echo "Fails basic test with STOP command"
+fi
+
+./lab4b --period=2 << EOF
+STOP
+OFF
+EOF
+if [ $? -eq 0 ]
+then
+    echo "Passes with period option"
+else
+    echo "Fails with period option"
+fi
+
+./lab4b --scale=C << EOF
+OFF
+EOF
+if [ $? -eq 0 ]
+then
+    echo "Passes with scale=C option"
+else
+    echo "Fails with scale=C option"
+fi
+
+./lab4b --period=3 --scale=C << EOF
+OFF
+EOF
+if [ $? -eq 0 ]
+then
+    echo "Passes with scale and period option"
+else
+    echo "Fails with scale and period option"
+fi
+
+./lab4b --period=3 --scale=C --log=logdummy << EOF
+OFF
+EOF
+if [ $? -eq 0 ]
+then
+    echo "Passes with scale, period, and log option"
+else
+    echo "Fails with scale, period, and log option"
+fi
+rm -f logdummy
+
+./lab4b << EOF
+STOP
+PERIOD=3
+START
+STOP
+SCALE=C
+START
+OFF
+EOF
+if [ $? -eq 0 ]
+then
+    echo "Passes with multiple stdin options"
+else
+    echo "Fails with multiple stdin options"
+fi
+
+
+./lab4b --bad
+if [ $? -eq 1 ]
+then
+    echo "Passes test for bad option"
+else
+    echo "Fails test for bad option"
+fi
+
+./lab4b --period=the
+if [ $? -eq 1 ]
+then
+    echo "Passes test for bad argument to --period"
+else
+    echo "Fails test for bad argument to --period"
+fi
+
+
+

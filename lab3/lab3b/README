@@ -1,0 +1,36 @@
+NAME: Collin Prince, Thilan Tran
+EMAIL: cprince99@g.ucla.edu, thilanoftran@gmail.com
+ID: 505091865, 605140530
+
+PROJECT 3B - File System Consistency Analysis
+---------------------------------------------
+
+FILES
+-----
+
+* lab3b.py -
+Python source file for the lab3b program to analyze a file system summary csv
+file and report on all discovered inconsistencies. Takes in the csv file as the
+primary, required argument. The program first reads in the csv row by row, and
+appends each row to a python list corresponding to the row type. The superblock
+and group data is read and metadata such as the minimum and maximum block and
+inode numbers are extracted.
+
+Then inconsistencies are detected in the following manner:
+- check all block pointers to be within the minimum and maximum block number
+- check the reference counts for every block (eg. for unreferenced, duplicate,
+  or freelist blocks that are allocated)
+- check inodes are allocated or on freelist
+- check number of links to an inode are consistent
+- check directory entries are allocated or on freelist
+- check directory links for . and .. entries
+
+* Makefile -
+lab3b : make the lab3b program
+dist  : make the tarball
+clean : remove lab3b link and tarball
+
+SOURCES
+-------
+https://www.pythonforbeginners.com/system/python-sys-argv
+http://www.nongnu.org/ext2-doc/ext2.html for ext2 format description

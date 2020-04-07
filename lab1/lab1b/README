@@ -1,0 +1,48 @@
+NAME: Collin Prince
+ID: 505091865
+EMAIL: cprince99@g.ucla.edu
+
+
+* lab1b-client.c
+----------------
+In lab1b-client.c, I begin my main function by limiting the output with ulimit to prevent
+runaway file growth. I then handle the possible options through a function opt_handler which
+goes through the process of getting opts, and I have global flags for --log and --compress.
+I then set the terminal settings with set_term. Next, I use client_creation and set up the
+socket on localhost and the corresponding port number that has been passed in to the --port.
+Next, my programs sets up two pollfd structures, one corresponding to input from stdin and
+one to the socket from the terminal. Poll is then called repeatedly and input from both
+processes are handled according to the outline of the spec. Compression is handled by functions
+within the stdin process, with data becoming compressed and decompressed resepectively.
+Compression loops through the read in packets and attempts to compress them repeatedly.
+Finally, when the shutdown protocol is detected, the program closes the socket and any open
+file descriptors (log if --log was used), and then reset the terminal settings before exiting. 
+
+* lab1b-server.c
+----------------
+In lab1b-server.c, my main function begins by handling options, and then going through the socket
+process in server_creation using the portnumber and making it on the localhost.
+Main then calls handle_server_shell which handles the forking and data stream process.
+This function forks the process and creates a child process that execs a shell and
+then makes stdin and stdout go to the pipe system with the parent process. The parent process
+then passed input from the socket to the shell (and decompresses if needed) and then reads
+in from the shell (and compresses as needed) to pass the input back to the client terminal. 
+
+* Makefile
+----------
+The makefile has the targets:
+all -- the default option which builds lab1b-client and lab1b-server
+lab1b-client -- the target which builds lab1b-client (with -lz flag for zlib)
+lab1b-server -- the target which builds lab1b-server (with -lz flag for zlib)
+dist -- target which makes tarball with lab1b-client.c, lab1b-server.c, Makefile, and README
+clean -- target with removes tarball and any object files
+
+
+
+Sources
+Linux Man Pages
+https://www.geeksforgeeks.org/socket-programming-cc/
+https://stackoverflow.com/questions/4538586/how-to-compress-a-buffer-with-zlib
+https://zlib.net/zlib_how.html
+http://www.cs.rpi.edu/~moorthy/Courses/os98/Pgms/socket.html
+https://www.lemoda.net/c/zlib-open-write/
